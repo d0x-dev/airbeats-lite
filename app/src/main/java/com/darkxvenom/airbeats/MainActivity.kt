@@ -162,7 +162,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.darkxvenom.airbeats.ui.component.RingtoneTrimmerDialog
 import com.darkxvenom.airbeats.ui.component.RingtoneProgressDialog
 import com.darkxvenom.airbeats.viewmodels.RingtoneViewModel
-import com.darkxvenom.airbeats.ui.screens.musicrecognition.MusicRecognitionRoute
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -953,14 +952,9 @@ class MainActivity : ComponentActivity() {
                                                                         }
                                                                     ),
                                                                 )
-                                                            IconButton(onClick = { navController.navigate(MusicRecognitionRoute) }) {
-                                                                Icon(
-                                                                    painter = painterResource(R.drawable.mic),
-                                                                    contentDescription = "Music Recognition"
-                                                                )
                                                             }
                                                         }
-                                                    }
+                                                    },
                                                 },
                                                 modifier = Modifier
                                                     .focusRequester(searchBarFocusRequester)

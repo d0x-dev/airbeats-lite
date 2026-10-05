@@ -195,16 +195,6 @@ fun NavGraphBuilder.navigationBuilder(
     }
 
     composable(
-        route = com.darkxvenom.airbeats.ui.screens.musicrecognition.MusicRecognitionRoute,
-        enterTransition = slideEnterTransition,
-        exitTransition = slideExitTransition,
-        popEnterTransition = slidePopEnterTransition,
-        popExitTransition = slidePopExitTransition,
-    ) {
-        com.darkxvenom.airbeats.ui.screens.musicrecognition.MusicRecognitionScreen(navController)
-    }
-
-    composable(
         route = "guest_profile_setup",
         enterTransition = slideEnterTransition,
         exitTransition = slideExitTransition,

@@ -884,22 +884,6 @@
     <string name="eight_d_audio_desc">Immersive 360-degree spatial panning rotation audio effect</string>
     <string name="eight_d_audio_level">8D Intensity Level</string>
 
-    <!-- Music Recognition -->
-    <string name="music_recognition">Music Recognition</string>
-    <string name="music_recognition_tap_to_listen">Tap to listen</string>
-    <string name="music_recognition_listening">Listening…</string>
-    <string name="music_recognition_processing">Processing…</string>
-    <string name="music_recognition_listen_again">Listen again</string>
-    <string name="music_recognition_no_match">No match found</string>
-    <string name="music_recognition_signature_failed">Couldn\'t generate a signature</string>
-    <string name="music_recognition_recognition_failed">Recognition failed</string>
-    <string name="music_recognition_open_shazam">Open Shazam</string>
-    <string name="music_recognition_lyrics_preview">Lyrics preview</string>
-    <string name="music_recognition_permission_title">Microphone permission</string>
-    <string name="music_recognition_permission_desc">Allow microphone access to recognize nearby music.</string>
-    <string name="music_recognition_permission_action">Allow</string>
-    <string name="music_recognition_error">Something went wrong</string>
-
     <!-- Share-to-Identify Music -->
     <string name="identify_music">Identify Music</string>
     <string name="identifying_music">Finding your song…</string>
