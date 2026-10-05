@@ -91,6 +91,9 @@ val AudioNormalizationKey = booleanPreferencesKey("audioNormalization")
 val AutoLoadMoreKey = booleanPreferencesKey("autoLoadMore")
 val SimilarContent = booleanPreferencesKey("similarContent")
 val AutoSkipNextOnErrorKey = booleanPreferencesKey("autoSkipNextOnError")
+val SkipUncachedPartKey = booleanPreferencesKey("skipUncachedPart")
+val EightDAudioEnabledKey = booleanPreferencesKey("eight_d_audio_enabled")
+val EightDAudioLevelKey = intPreferencesKey("eight_d_audio_level")
 val StopMusicOnTaskClearKey = booleanPreferencesKey("stopMusicOnTaskClear")
 
 val MaxImageCacheSizeKey = intPreferencesKey("maxImageCacheSize")
@@ -317,6 +320,15 @@ enum class QuickPicks {
 enum class PreferredLyricsProvider {
     LRCLIB,
     KUGOU,
+    SIMP_MUSIC,
+    YOUTUBE_SUBTITLES,
+    PAXSENIX,
+    UNISON,
+    BETTER_LYRICS,
+    PORTATO,
+    YOULY,
+    MEGALOBIZ,
+    YOUTUBE_MUSIC,
 }
 
 enum class PlayerBackgroundStyle {

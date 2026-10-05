@@ -874,5 +874,75 @@
     <string name="android_auto_tutorial_step3">3. Tap repeatedly on \"Version information and permissions\" until you see \"You are now in developer mode\"</string>
     <string name="android_auto_tutorial_step4">4. Tap the 3 dots at the top and go to \"Developer settings\", then enable \"Unknown sources\"</string>
     <string name="android_auto_tutorial_step5">5. Restart Android Auto and AirBeats will appear in the media apps list</string>
+
+    <!-- Offline Playback & Skip Uncached -->
+    <string name="skip_uncached_part">Skip uncached songs offline</string>
+    <string name="skip_uncached_part_desc">Skip to next track instead of pausing when playing uncached or partially cached songs offline</string>
+
+    <!-- 8D Audio -->
+    <string name="eight_d_audio">8D Audio</string>
+    <string name="eight_d_audio_desc">Immersive 360-degree spatial panning rotation audio effect</string>
+    <string name="eight_d_audio_level">8D Intensity Level</string>
+
+    <!-- Listen Together -->
+    <string name="listen_together">Listen Together</string>
+    <string name="listen_together_description">Create a local LAN session or sync playback with friends in real time.</string>
+    <string name="listen_together_code">Listen Together code</string>
+
+    <!-- Music Recognition -->
+    <string name="music_recognition">Music Recognition</string>
+    <string name="music_recognition_tap_to_listen">Tap to listen</string>
+    <string name="music_recognition_listening">Listening…</string>
+    <string name="music_recognition_processing">Processing…</string>
+    <string name="music_recognition_listen_again">Listen again</string>
+    <string name="music_recognition_no_match">No match found</string>
+    <string name="music_recognition_signature_failed">Couldn\'t generate a signature</string>
+    <string name="music_recognition_recognition_failed">Recognition failed</string>
+    <string name="music_recognition_open_shazam">Open Shazam</string>
+    <string name="music_recognition_lyrics_preview">Lyrics preview</string>
+    <string name="music_recognition_permission_title">Microphone permission</string>
+    <string name="music_recognition_permission_desc">Allow microphone access to recognize nearby music.</string>
+    <string name="music_recognition_permission_action">Allow</string>
+    <string name="music_recognition_error">Something went wrong</string>
+
+    <!-- Share-to-Identify Music -->
+    <string name="identify_music">Identify Music</string>
+    <string name="identifying_music">Finding your song…</string>
+    <string name="analyzing_media">Analyzing the shared media…</string>
+    <string name="extracting_audio">Extracting audio segment…</string>
+    <string name="selecting_segment">Selecting clearest music segment…</string>
+    <string name="recognizing_song">Recognizing track…</string>
+    <string name="searching_airbeats">Finding song in AirBeats…</string>
+    <string name="music_found">Music Found</string>
+    <string name="no_music_found_title">Couldn\'t identify the music</string>
+    <string name="no_music_found_desc">Try sharing a section where the music is clearer and louder.</string>
+    <string name="no_audio_found">No audio track found in the shared video.</string>
+    <string name="unsupported_media">This media format cannot be processed.</string>
+    <string name="network_error_identify_title">No Internet Connection</string>
+    <string name="network_error_identify_desc">Music identification requires an active internet connection.</string>
+    <string name="play_in_airbeats">Play in AirBeats</string>
+    <string name="url_share_title">Shared Link Received</string>
+    <string name="url_share_desc">The source app shared a web link instead of the media file. To identify the music, please download or save the video/audio and share the file directly to AirBeats.</string>
+    <string name="audd_token_title">Music Recognition Token</string>
+    <string name="audd_token_desc">Optional custom AudD API token for unlimited song identification</string>
+    <string name="search_another_provider">Search manually in AirBeats</string>
+    <string name="error">Error</string>
+    <string name="resolving_link">Fetching audio from shared link…</string>
+
+    <!-- Snippet Studio & Ringtone -->
+    <string name="set_as_ringtone">Set as Ringtone</string>
+    <string name="output_audio_device">Output audio device</string>
+    <string name="ringtone_studio">Snippet Studio</string>
+    <string name="ringtone_studio_desc">Trim and export audio clips</string>
+    <string name="share_clip">Share</string>
+    <string name="save_snippet">Download</string>
+    <string name="snippet_duration">Length: %1$s</string>
+    <string name="loading_snippet_audio">Preparing audio track…</string>
+    <string name="processing_snippet">Trimming clip…</string>
+    <string name="clip_saved_to_storage">Snippet downloaded to Music/AirBeats/Snippets</string>
+    <string name="preset_15s">15s Story</string>
+    <string name="preset_30s">30s Clip</string>
+    <string name="preset_45s">45s</string>
+    <string name="preset_60s">60s</string>
 </resources>
 

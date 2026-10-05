@@ -90,7 +90,12 @@ import com.darkxvenom.airbeats.constants.RepeatModeKey
 import com.darkxvenom.airbeats.constants.ShowLyricsKey
 import com.darkxvenom.airbeats.constants.SimilarContent
 import com.darkxvenom.airbeats.constants.SkipSilenceKey
+import com.darkxvenom.airbeats.constants.SkipUncachedPartKey
+import com.darkxvenom.airbeats.constants.EightDAudioEnabledKey
+import com.darkxvenom.airbeats.constants.EightDAudioLevelKey
 import com.darkxvenom.airbeats.constants.StopMusicOnTaskClearKey
+import androidx.media3.datasource.cache.ContentMetadata
+import kotlinx.coroutines.runBlocking
 import com.darkxvenom.airbeats.db.MusicDatabase
 import com.darkxvenom.airbeats.db.entities.Event
 import com.darkxvenom.airbeats.db.entities.FormatEntity
@@ -269,6 +274,10 @@ class MusicService :
     lateinit var player: ExoPlayer
     private lateinit var mediaSession: MediaLibrarySession
 
+    val eightDAudioProcessor = EightDAudioProcessor()
+    val eightDAudioEnabled = MutableStateFlow(false)
+    val eightDAudioLevel = MutableStateFlow(8)
+
     private var isAudioEffectSessionOpened = false
     private var loudnessEnhancer: LoudnessEnhancer? = null
     private var equalizer: Equalizer? = null
@@ -438,6 +447,23 @@ class MusicService :
             .distinctUntilChanged()
             .collectLatest(scope) {
                 player.skipSilenceEnabled = it
+            }
+
+        dataStore.data
+            .map { it[EightDAudioEnabledKey] ?: false }
+            .distinctUntilChanged()
+            .collectLatest(scope) { enabled ->
+                eightDAudioEnabled.value = enabled
+                eightDAudioProcessor.enabled = enabled
+            }
+
+        dataStore.data
+            .map { it[EightDAudioLevelKey] ?: 8 }
+            .distinctUntilChanged()
+            .collectLatest(scope) { level ->
+                val clamped = level.coerceIn(1, 16)
+                eightDAudioLevel.value = clamped
+                eightDAudioProcessor.level = clamped
             }
 
         combine(
@@ -1401,6 +1427,9 @@ class MusicService :
 
         // Manejar cuando termina la reproducción para que nunca se detenga inesperadamente
         if (playbackState == Player.STATE_ENDED) {
+            if (player.mediaItemCount == 0 || player.playbackState == Player.STATE_IDLE) {
+                return
+            }
             // 1. Si el modo de repetición es REPEAT_MODE_ONE, reiniciar la misma canción
             if (player.repeatMode == Player.REPEAT_MODE_ONE) {
                 player.seekTo(0)
@@ -1430,8 +1459,30 @@ class MusicService :
                 return
             }
 
-            // 4. Si Endless Queue (AutoLoadMore) está activado, cargar más canciones y continuar
-            if (dataStore.get(AutoLoadMoreKey, true)) {
+            val isOffline = !isNetworkConnected.value
+            val skipUncachedPart = dataStore.get(SkipUncachedPartKey, false)
+
+            if (isOffline && player.hasNextMediaItem()) {
+                val currentIdx = player.currentMediaItemIndex
+                val totalItems = player.mediaItemCount
+                var nextPlayableIndex = -1
+                for (i in (currentIdx + 1) until totalItems) {
+                    val item = player.getMediaItemAt(i)
+                    if (isSongFullyCached(item.mediaId) || !skipUncachedPart) {
+                        nextPlayableIndex = i
+                        break
+                    }
+                }
+                if (nextPlayableIndex != -1) {
+                    player.seekToDefaultPosition(nextPlayableIndex)
+                    player.prepare()
+                    player.play()
+                    return
+                }
+            }
+
+            // 4. Si Endless Queue (AutoLoadMore) está activado y con red, cargar más canciones y continuar
+            if (dataStore.get(AutoLoadMoreKey, true) && !isOffline) {
                 val currentSeedId = player.currentMediaItem?.mediaId
                 if (!currentSeedId.isNullOrBlank()) {
                     extendInfiniteQueue(currentSeedId, autoPlayIfEnded = true)
@@ -1566,24 +1617,162 @@ class MusicService :
         }
     }
 
+    fun isSongFullyCached(mediaId: String): Boolean {
+        if (mediaId.startsWith("content://") || mediaId.startsWith("file://")) {
+            return true
+        }
+        val safeMediaId = mediaId.replace(Regex("[^a-zA-Z0-9_-]"), "_")
+        val offlineFile = java.io.File(cacheDir, "offline_cache").listFiles()?.firstOrNull {
+            it.name.startsWith("cached_${safeMediaId}.") && it.length() > 500_000L
+        }
+        if (offlineFile != null) return true
+
+        if (downloadCache.isFullyCached(mediaId)) {
+            return true
+        }
+
+        val dlBytes = runCatching { downloadCache.getCachedSpans(mediaId).sumOf { it.length } }.getOrDefault(0L)
+        val plBytes = runCatching { playerCache.getCachedSpans(mediaId).sumOf { it.length } }.getOrDefault(0L)
+        val totalCached = dlBytes + plBytes
+        if (totalCached <= 0L) return false
+
+        val dlMeta = runCatching { downloadCache.getContentMetadata(mediaId) }.getOrNull()
+        val plMeta = runCatching { playerCache.getContentMetadata(mediaId) }.getOrNull()
+        val metaLen = listOfNotNull(dlMeta, plMeta)
+            .map { runCatching { ContentMetadata.getContentLength(it) }.getOrDefault(-1L) }
+            .firstOrNull { it > 0L } ?: -1L
+
+        if (metaLen > 0L) {
+            return totalCached >= (metaLen * 0.95).toLong()
+        }
+
+        val dbLen: Long = runCatching {
+            runBlocking(Dispatchers.IO) {
+                database.format(mediaId).firstOrNull()?.contentLength ?: -1L
+            }
+        }.getOrNull() ?: -1L
+
+        if (dbLen > 0L) {
+            return totalCached >= (dbLen * 0.95).toLong()
+        }
+
+        return totalCached >= 2_500_000L
+    }
+
+    private fun androidx.media3.datasource.cache.Cache.isFullyCached(mediaId: String): Boolean {
+        val contentLength = runCatching { ContentMetadata.getContentLength(getContentMetadata(mediaId)) }.getOrDefault(-1L)
+        if (contentLength > 0L) {
+            return isCached(mediaId, 0L, contentLength)
+        }
+        val dbLen: Long = runCatching {
+            runBlocking(Dispatchers.IO) {
+                database.format(mediaId).firstOrNull()?.contentLength ?: -1L
+            }
+        }.getOrNull() ?: -1L
+        if (dbLen > 0L) {
+            return isCached(mediaId, 0L, dbLen)
+        }
+        val spans = runCatching { getCachedSpans(mediaId) }.getOrNull() ?: return false
+        val total = spans.sumOf { it.length }
+        return total > 2_500_000L
+    }
+
+    fun setEightDAudioEnabled(enabled: Boolean) {
+        eightDAudioEnabled.value = enabled
+        eightDAudioProcessor.enabled = enabled
+        scope.launch {
+            dataStore.edit { settings ->
+                settings[EightDAudioEnabledKey] = enabled
+            }
+        }
+    }
+
+    fun setEightDAudioLevel(level: Int) {
+        val clamped = level.coerceIn(1, 16)
+        eightDAudioLevel.value = clamped
+        eightDAudioProcessor.level = clamped
+        scope.launch {
+            dataStore.edit { settings ->
+                settings[EightDAudioLevelKey] = clamped
+            }
+        }
+    }
+
+    fun updateEightDAudio() {
+        eightDAudioProcessor.enabled = eightDAudioEnabled.value
+    }
+
     override fun onPlayerError(error: PlaybackException) {
         super.onPlayerError(error)
 
         Log.e(TAG, "Player error: ${error.errorCodeName}, message: ${error.message}", error)
 
-        val isConnectionError = (error.cause?.cause is PlaybackException) &&
-                (error.cause?.cause as PlaybackException).errorCode == PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED
+        val currentMediaId = player.currentMediaItem?.mediaId
+        val isOffline = !isNetworkConnected.value
+        val skipUncachedPart = dataStore.get(SkipUncachedPartKey, false)
+        val autoSkipOnError = dataStore.get(AutoSkipNextOnErrorKey, false)
 
-        if (!isNetworkConnected.value || isConnectionError) {
+        val canAutoSkip = if (isOffline) {
+            (skipUncachedPart || autoSkipOnError) && currentMediaId != null
+        } else {
+            autoSkipOnError
+        }
+
+        if (canAutoSkip) {
+            PlayerConnection.instance?.clearError()
+
+            val currentIdx = player.currentMediaItemIndex
+            val totalItems = player.mediaItemCount
+            var nextPlayableIndex = -1
+
+            if (totalItems > 1) {
+                if (isOffline) {
+                    for (i in (currentIdx + 1) until totalItems) {
+                        val item = player.getMediaItemAt(i)
+                        if (isSongFullyCached(item.mediaId)) {
+                            nextPlayableIndex = i
+                            break
+                        }
+                    }
+                    if (nextPlayableIndex == -1 && (player.repeatMode == Player.REPEAT_MODE_ALL || player.shuffleModeEnabled)) {
+                        for (i in 0 until currentIdx) {
+                            val item = player.getMediaItemAt(i)
+                            if (isSongFullyCached(item.mediaId)) {
+                                nextPlayableIndex = i
+                                break
+                            }
+                        }
+                    }
+                } else if (player.hasNextMediaItem()) {
+                    nextPlayableIndex = currentIdx + 1
+                }
+            }
+
+            if (nextPlayableIndex != -1) {
+                Log.i(TAG, "Auto-skipping failed/uncached song to playable track at index $nextPlayableIndex")
+                scope.launch(Dispatchers.Main) {
+                    PlayerConnection.instance?.clearError()
+                    player.seekToDefaultPosition(nextPlayableIndex)
+                    player.prepare()
+                    player.play()
+                }
+                return
+            } else {
+                Log.w(TAG, "No more playable cached songs found in current queue")
+                scope.launch(Dispatchers.Main) {
+                    PlayerConnection.instance?.clearError()
+                    player.pause()
+                }
+                return
+            }
+        }
+
+        if (!isNetworkConnected.value) {
             waitOnNetworkError()
             return
         }
 
-        if (dataStore.get(AutoSkipNextOnErrorKey, false)) {
-            skipOnError()
-        } else {
-            stopOnError()
-        }
+        stopOnError()
     }
 
     private fun createCacheDataSource(): CacheDataSource.Factory =
@@ -1883,7 +2072,7 @@ class MusicService :
                 .setEnableAudioTrackPlaybackParams(enableAudioTrackPlaybackParams)
                 .setAudioProcessorChain(
                     DefaultAudioSink.DefaultAudioProcessorChain(
-                        emptyArray(),
+                        arrayOf(eightDAudioProcessor),
                         SilenceSkippingAudioProcessor(2_000_000, 20_000, 256),
                         SonicAudioProcessor(),
                     ),

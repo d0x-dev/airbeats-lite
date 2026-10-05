@@ -71,6 +71,10 @@ fun PlayerSettings(
         AutoSkipNextOnErrorKey,
         defaultValue = false
     )
+    val (skipUncachedPart, onSkipUncachedPartChange) = rememberPreference(
+        com.darkxvenom.airbeats.constants.SkipUncachedPartKey,
+        defaultValue = false
+    )
     val (stopMusicOnTaskClear, onStopMusicOnTaskClearChange) = rememberPreference(
         StopMusicOnTaskClearKey,
         defaultValue = false
@@ -155,6 +159,14 @@ fun PlayerSettings(
                     icon = { Icon(painterResource(R.drawable.skip_next), null) },
                     checked = autoSkipNextOnError,
                     onCheckedChange = onAutoSkipNextOnErrorChange
+                )},
+
+                {SwitchPreference(
+                    title = { Text(stringResource(R.string.skip_uncached_part)) },
+                    description = stringResource(R.string.skip_uncached_part_desc),
+                    icon = { Icon(painterResource(R.drawable.cached), null) },
+                    checked = skipUncachedPart,
+                    onCheckedChange = onSkipUncachedPartChange
                 )},
             )
         )

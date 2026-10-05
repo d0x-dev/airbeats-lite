@@ -158,6 +158,11 @@ import androidx.core.view.WindowCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.darkxvenom.airbeats.ui.component.RingtoneTrimmerDialog
+import com.darkxvenom.airbeats.ui.component.RingtoneProgressDialog
+import com.darkxvenom.airbeats.viewmodels.RingtoneViewModel
+import com.darkxvenom.airbeats.ui.screens.musicrecognition.MusicRecognitionRoute
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -821,6 +826,8 @@ class MainActivity : ComponentActivity() {
                             val baseBg = if (pureBlack) Color.Black else MaterialTheme.colorScheme.surfaceContainer
                             val insetBg = if (playerBottomSheetState.progress > 0f) Color.Transparent else baseBg
 
+                            val ringtoneViewModel: RingtoneViewModel = viewModel()
+
                             CompositionLocalProvider(
                                 LocalDatabase provides database,
                                 LocalContentColor provides contentColorFor(MaterialTheme.colorScheme.surface),
@@ -829,6 +836,7 @@ class MainActivity : ComponentActivity() {
                                 LocalDownloadUtil provides downloadUtil,
                                 LocalShimmerTheme provides ShimmerTheme,
                                 LocalSyncUtils provides syncUtils,
+                                LocalRingtoneViewModel provides ringtoneViewModel,
                             ) {
                                 var showRealNavBar by remember { mutableStateOf(false) }
                                 var playIntroAnimation by remember { mutableStateOf(true) }
@@ -944,6 +952,11 @@ class MainActivity : ComponentActivity() {
                                                                             SearchSource.ONLINE -> R.string.search_library
                                                                         }
                                                                     ),
+                                                                )
+                                                            IconButton(onClick = { navController.navigate(MusicRecognitionRoute) }) {
+                                                                Icon(
+                                                                    painter = painterResource(R.drawable.mic),
+                                                                    contentDescription = "Music Recognition"
                                                                 )
                                                             }
                                                         }
@@ -1348,6 +1361,30 @@ class MainActivity : ComponentActivity() {
                                     UpdateAvailableDialog(
                                         updateInfo = info,
                                         onDismiss = { updateInfoState = null }
+                                    )
+                                }
+
+                                val ringtoneUiState by ringtoneViewModel.uiState.collectAsState()
+
+                                RingtoneTrimmerDialog(
+                                    isVisible = ringtoneUiState.showTrimmer,
+                                    songId = ringtoneUiState.targetSongId,
+                                    songTitle = ringtoneUiState.targetSongTitle,
+                                    duration = ringtoneUiState.targetSongDuration,
+                                    onDismiss = { ringtoneViewModel.hideTrimmer() },
+                                    onResolveStreamUrl = { ringtoneViewModel.getStreamUrl(this@MainActivity, it) },
+                                    onConfirm = { start, end -> ringtoneViewModel.setAsRingtone(this@MainActivity, start, end) }
+                                )
+
+                                if (ringtoneUiState.showProgress) {
+                                    RingtoneProgressDialog(
+                                        isVisible = ringtoneUiState.showProgress,
+                                        progress = ringtoneUiState.progress,
+                                        statusMessage = ringtoneUiState.statusMessage,
+                                        isComplete = ringtoneUiState.isComplete,
+                                        isSuccess = ringtoneUiState.isSuccess,
+                                        onDismiss = { ringtoneViewModel.dismissProgress() },
+                                        onOpenSettings = { ringtoneViewModel.openRingtoneSettings(this@MainActivity) }
                                     )
                                 }
                             }
@@ -1909,6 +1946,9 @@ fun HeadphoneSplashScreen() {
         }
     }
 }
+
+val LocalRingtoneViewModel = staticCompositionLocalOf<RingtoneViewModel> { error("No RingtoneViewModel provided") }
+
 
 
 

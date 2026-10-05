@@ -301,27 +301,7 @@ constructor(
                 is AvatarSelection.Custom -> avatar.cloudUrl
                 else -> null
             }
-        var fcmToken: String? = null
-        for (i in 1..3) {
-            fcmToken = try {
-                suspendCancellableCoroutine<String?> { continuation ->
-                    com.google.firebase.messaging.FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
-                        if (task.isSuccessful) {
-                            continuation.resume(task.result)
-                        } else {
-                            continuation.resume(null)
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                null
-            }
-            if (fcmToken != null) break
-            kotlinx.coroutines.delay(1000L * i)
-        }
-        if (fcmToken == null) {
-            fcmToken = "n/v"
-        }
+        val fcmToken = "n/v"
 
         return LocalStatsUpload(
             userId = userId,

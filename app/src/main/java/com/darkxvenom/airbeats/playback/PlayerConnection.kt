@@ -174,6 +174,7 @@ class PlayerConnection(
         player.addListener(this)
         initializeStates()
         startProgressUpdates()
+        com.darkxvenom.airbeats.utils.ListenTogetherSync.start(context, this)
 
         instance = this
 
@@ -524,6 +525,10 @@ class PlayerConnection(
             Log.e(TAG, "Error toggling mute", e)
             reportException(e)
         }
+    }
+
+    fun clearError() {
+        _error.value = null
     }
 
     // Listeners del reproductor sobrescritos

@@ -7,7 +7,6 @@ plugins {
     kotlin("android")
     alias(libs.plugins.kotlin.serialization)
     kotlin("kapt")
-    id("com.google.gms.google-services")
     alias(libs.plugins.hilt)
     alias(libs.plugins.kotlin.ksp)
     alias(libs.plugins.compose.compiler)
@@ -47,9 +46,6 @@ android {
         ndk {
             abiFilters.addAll(listOf("arm64-v8a", "armeabi-v7a"))
         }
-
-        // Strip out language resources from libraries that the app doesn't support
-        resConfigs("en")
     }
 
     signingConfigs {
@@ -199,8 +195,6 @@ dependencies {
     implementation(libs.mpandroidchart)
     implementation(libs.foundation)
     implementation(libs.ui.graphics)
-    implementation(platform("com.google.firebase:firebase-bom:34.11.0"))
-    implementation("com.google.firebase:firebase-messaging")
     ksp(libs.room.compiler)
     implementation(libs.room.ktx)
 
@@ -209,6 +203,7 @@ dependencies {
     implementation(libs.hilt)
     implementation("org.jsoup:jsoup:1.18.1")
     implementation("com.github.skydoves:cloudy:0.2.7")
+    implementation("org.nanohttpd:nanohttpd:2.3.1")
     kapt(libs.hilt.compiler)
 
     implementation(projects.innertube)
