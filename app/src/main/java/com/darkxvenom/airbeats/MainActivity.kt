@@ -954,7 +954,7 @@ class MainActivity : ComponentActivity() {
                                                                 )
                                                             }
                                                         }
-                                                    },
+                                                    }
                                                 },
                                                 modifier = Modifier
                                                     .focusRequester(searchBarFocusRequester)
