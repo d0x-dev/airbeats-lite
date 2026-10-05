@@ -884,11 +884,6 @@
     <string name="eight_d_audio_desc">Immersive 360-degree spatial panning rotation audio effect</string>
     <string name="eight_d_audio_level">8D Intensity Level</string>
 
-    <!-- Listen Together -->
-    <string name="listen_together">Listen Together</string>
-    <string name="listen_together_description">Create a local LAN session or sync playback with friends in real time.</string>
-    <string name="listen_together_code">Listen Together code</string>
-
     <!-- Music Recognition -->
     <string name="music_recognition">Music Recognition</string>
     <string name="music_recognition_tap_to_listen">Tap to listen</string>

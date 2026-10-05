@@ -89,3 +89,17 @@
 -dontwarn java.beans.Introspector
 -dontwarn java.beans.PropertyDescriptor
 -dontwarn okhttp3.internal.Util
+
+# Keep Android framework org.json classes and prevent R8 renaming
+-keep class org.json.** { *; }
+-dontwarn org.json.**
+
+# Keep NanoHTTPD for LAN Together
+-keep class fi.iki.elonen.** { *; }
+-dontwarn fi.iki.elonen.**
+
+# Keep native Shazam JNI bindings
+-keep class com.alexmercerind.audire.native.** { *; }
+-keepclasseswithmembernames class * {
+    native <methods>;
+}

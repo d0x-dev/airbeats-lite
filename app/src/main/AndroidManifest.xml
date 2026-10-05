@@ -232,6 +232,8 @@
             <meta-data
                 android:name="android.app.shortcuts"
                 android:resource="@xml/shortcuts" />
+        </activity>
+
         <activity android:name=".ui.activities.DebugActivity" />
 
         <!-- Share-to-Identify Music Activity -->
