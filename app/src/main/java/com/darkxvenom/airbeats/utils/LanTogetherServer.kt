@@ -10,7 +10,6 @@ import androidx.media3.datasource.DataSourceInputStream
 import androidx.media3.datasource.DataSpec
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.DefaultHttpDataSource
-import com.darkxvenom.airbeats.playback.cast.ResolvedCastStream
 import fi.iki.elonen.NanoHTTPD
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -22,6 +21,12 @@ import java.net.Inet4Address
 import java.net.NetworkInterface
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+
+data class ResolvedCastStream(
+    val url: String,
+    val mimeType: String = "audio/mp4",
+    val requestHeaders: Map<String, String> = emptyMap(),
+)
 
 data class LanQueueItem(
     val index: Int,
@@ -388,10 +393,10 @@ class LanTogetherServer(
             )
 
             val status = if (range == null) Response.Status.OK else Response.Status.PARTIAL_CONTENT
-            val response = if (length >= 0) {
-                newFixedLengthResponse(status, mimeType, input, length)
+            val response: Response = if (length >= 0) {
+                newFixedLengthResponse(status, mimeType, input as java.io.InputStream, length)
             } else {
-                newChunkedResponse(status, mimeType, input)
+                newChunkedResponse(status, mimeType, input as java.io.InputStream)
             }
 
             response.addHeader("Accept-Ranges", "bytes")

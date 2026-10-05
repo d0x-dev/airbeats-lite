@@ -208,7 +208,13 @@ object ListenTogetherSync {
                     port = port,
                     hostDisplayName = _displayName.value,
                     audioStreamResolver = { songId ->
-                        playerConnection?.service?.resolveAudioStreamForCast(songId)
+                        val url = RingtoneHelper.getStreamUrl(context, songId)
+                        if (url != null) {
+                            ResolvedCastStream(
+                                url = url,
+                                mimeType = if (url.endsWith(".mp3")) "audio/mpeg" else if (url.endsWith(".opus") || url.endsWith(".ogg")) "audio/ogg" else "audio/mp4"
+                            )
+                        } else null
                     }
                 )
                 server.playbackState = ListenTogetherPlaybackState(
