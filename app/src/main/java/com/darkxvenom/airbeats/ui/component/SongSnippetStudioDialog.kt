@@ -296,7 +296,7 @@ fun SongSnippetStudioDialog(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            painter = painterResource(R.drawable.content_cut),
+                            painter = painterResource(R.drawable.save_to_storage),
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onPrimaryContainer,
                             modifier = Modifier.size(22.dp)

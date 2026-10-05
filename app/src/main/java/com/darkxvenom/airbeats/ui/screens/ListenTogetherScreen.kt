@@ -74,7 +74,7 @@ import coil.compose.AsyncImage
 import com.darkxvenom.airbeats.LocalPlayerAwareWindowInsets
 import com.darkxvenom.airbeats.LocalPlayerConnection
 import com.darkxvenom.airbeats.R
-import com.darkxvenom.airbeats.ui.component.ScreenAdaptiveBackground
+import com.darkxvenom.airbeats.ui.component.BlurredBackground
 import com.darkxvenom.airbeats.ui.component.SettingsGlassCard
 import com.darkxvenom.airbeats.ui.component.SettingsTopAppBar
 import com.darkxvenom.airbeats.utils.LanTogetherClient
@@ -161,8 +161,8 @@ fun ListenTogetherScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        ScreenAdaptiveBackground(
-            artworkUrl = mediaMetadata?.thumbnailUrl
+        BlurredBackground(
+            model = mediaMetadata?.thumbnailUrl
         )
 
         Scaffold(
@@ -199,7 +199,7 @@ fun ListenTogetherScreen(
                         shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
                         icon = {
                             Icon(
-                                painter = painterResource(R.drawable.globe_search),
+                                painter = painterResource(R.drawable.search),
                                 contentDescription = null,
                                 modifier = Modifier.size(16.dp)
                             )
@@ -219,7 +219,7 @@ fun ListenTogetherScreen(
                         shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
                         icon = {
                             Icon(
-                                painter = painterResource(R.drawable.ic_wifi),
+                                painter = painterResource(R.drawable.wifi_proxy),
                                 contentDescription = null,
                                 modifier = Modifier.size(16.dp)
                             )
@@ -594,7 +594,7 @@ fun ListenTogetherScreen(
                                                     ) {
                                                         Box(contentAlignment = Alignment.Center) {
                                                             Icon(
-                                                                painter = painterResource(R.drawable.ic_wifi),
+                                                                painter = painterResource(R.drawable.wifi_proxy),
                                                                 contentDescription = null,
                                                                 modifier = Modifier.size(18.dp),
                                                                 tint = MaterialTheme.colorScheme.primary
@@ -833,7 +833,7 @@ private fun CurrentSessionCard(
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                         ) {
                             Icon(
-                                painter = painterResource(if (isLan) R.drawable.ic_wifi else R.drawable.resource_public),
+                                painter = painterResource(if (isLan) R.drawable.wifi_proxy else R.drawable.search),
                                 contentDescription = null,
                                 modifier = Modifier.size(12.dp),
                                 tint = MaterialTheme.colorScheme.primary

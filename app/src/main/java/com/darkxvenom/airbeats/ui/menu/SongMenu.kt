@@ -4,7 +4,6 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
-import com.darkxvenom.airbeats.LocalRingtoneViewModel
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -83,14 +82,12 @@ import com.darkxvenom.airbeats.extensions.toMediaItem
 import com.darkxvenom.airbeats.models.toMediaMetadata
 import com.darkxvenom.airbeats.playback.ExoDownloadService
 import com.darkxvenom.airbeats.playback.queues.YouTubeQueue
-import com.darkxvenom.airbeats.ui.component.DownloadQualityDialog
 import com.darkxvenom.airbeats.ui.component.ListDialog
 import com.darkxvenom.airbeats.ui.component.LocalBottomSheetPageState
 import com.darkxvenom.airbeats.ui.component.SongListItem
 import com.darkxvenom.airbeats.ui.component.TextFieldDialog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 @Composable
 fun SongMenu(
@@ -107,7 +104,6 @@ fun SongMenu(
     val playerConnection = LocalPlayerConnection.current ?: return
     val songState = database.song(originalSong.id).collectAsState(initial = originalSong)
     val song = songState.value ?: originalSong
-    val isExcluded by database.isRecommendationExcluded(originalSong.id).collectAsState(initial = false)
     val download by LocalDownloadUtil.current.getDownload(originalSong.id)
         .collectAsState(initial = null)
     val coroutineScope = rememberCoroutineScope()
@@ -148,8 +144,6 @@ fun SongMenu(
     var showSnippetStudioDialog by rememberSaveable {
         mutableStateOf(false)
     }
-
-    val ringtoneViewModel = LocalRingtoneViewModel.current
 
     if (showEditDialog) {
         TextFieldDialog(
@@ -330,6 +324,21 @@ fun SongMenu(
                 },
                 modifier = Modifier.clickable {
                     showChoosePlaylistDialog = true
+                }
+            )
+        }
+        item {
+            ListItem(
+                headlineContent = { Text(text = stringResource(R.string.ringtone_studio)) },
+                supportingContent = { Text(text = stringResource(R.string.ringtone_studio_desc)) },
+                leadingContent = {
+                    Icon(
+                        painter = painterResource(R.drawable.save_to_storage),
+                        contentDescription = null,
+                    )
+                },
+                modifier = Modifier.clickable {
+                    showSnippetStudioDialog = true
                 }
             )
         }
@@ -525,7 +534,6 @@ fun SongMenu(
                 }
 
                 else -> {
-                    var showQualityDialog by remember { mutableStateOf(false) }
                     ListItem(
                         headlineContent = { Text(text = stringResource(R.string.download)) },
                         leadingContent = {
@@ -534,28 +542,21 @@ fun SongMenu(
                                 contentDescription = null,
                             )
                         },
-                        modifier = Modifier.clickable { showQualityDialog = true }
+                        modifier = Modifier.clickable {
+                            val downloadRequest =
+                                DownloadRequest
+                                    .Builder(song.id, song.id.toUri())
+                                    .setCustomCacheKey(song.id)
+                                    .setData(song.song.title.toByteArray())
+                                    .build()
+                            DownloadService.sendAddDownload(
+                                context,
+                                ExoDownloadService::class.java,
+                                downloadRequest,
+                                false,
+                            )
+                        }
                     )
-                    if (showQualityDialog) {
-                        DownloadQualityDialog(
-                            onDismiss = { showQualityDialog = false },
-                            onQualitySelected = {
-                                showQualityDialog = false
-                                val downloadRequest =
-                                    DownloadRequest
-                                        .Builder(song.id, song.id.toUri())
-                                        .setCustomCacheKey(song.id)
-                                        .setData(song.song.title.toByteArray())
-                                        .build()
-                                DownloadService.sendAddDownload(
-                                    context,
-                                    ExoDownloadService::class.java,
-                                    downloadRequest,
-                                    false,
-                                )
-                            },
-                        )
-                    }
                 }
             }
         }
@@ -588,46 +589,6 @@ fun SongMenu(
                     } else {
                         permissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
                     }
-                }
-            )
-        }
-        item {
-            ListItem(
-                headlineContent = { Text(text = "Set as Ringtone") },
-                leadingContent = {
-                    Icon(
-                        painter = painterResource(R.drawable.notification),
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp)
-                    )
-                },
-                modifier = Modifier.clickable {
-                    if (ringtoneViewModel.hasSettingsPermission(context)) {
-                        ringtoneViewModel.showTrimmer(
-                            song.song.id,
-                            song.song.title,
-                            song.artists.joinToString { it.name },
-                            song.song.duration.toLong()
-                        )
-                    } else {
-                        ringtoneViewModel.requestSettingsPermission(context)
-                    }
-                    onDismiss()
-                }
-            )
-        }
-        item {
-            ListItem(
-                headlineContent = { Text(text = stringResource(R.string.ringtone_studio)) },
-                supportingContent = { Text(text = stringResource(R.string.ringtone_studio_desc)) },
-                leadingContent = {
-                    Icon(
-                        painter = painterResource(R.drawable.content_cut),
-                        contentDescription = null,
-                    )
-                },
-                modifier = Modifier.clickable {
-                    showSnippetStudioDialog = true
                 }
             )
         }
@@ -706,52 +667,6 @@ fun SongMenu(
                     bottomSheetPageState.show {
                         (song.id)
                     }
-                }
-            )
-        }
-        item {
-            ListItem(
-                headlineContent = {
-                    Text(
-                        text = stringResource(
-                            if (isExcluded) R.string.allow_recommendations
-                            else R.string.dont_recommend_again
-                        )
-                    )
-                },
-                leadingContent = {
-                    Icon(
-                        painter = painterResource(R.drawable.block),
-                        contentDescription = null,
-                    )
-                },
-                modifier = Modifier.clickable {
-                    val wasExcluded = isExcluded
-                    coroutineScope.launch(Dispatchers.IO) {
-                        if (wasExcluded) {
-                            database.removeRecommendationExclusion(song.id)
-                        } else {
-                            database.insert(
-                                com.darkxvenom.airbeats.db.entities.RecommendationExclusionEntity(
-                                    songId = song.id,
-                                    title = song.song.title,
-                                    artist = song.artists.joinToString { it.name },
-                                    thumbnailUrl = song.song.thumbnailUrl
-                                )
-                            )
-                            withContext(Dispatchers.Main) {
-                                playerConnection.removeSongFromQueue(song.id)
-                            }
-                        }
-                    }
-                    if (!wasExcluded) {
-                        onDismiss()
-                    }
-                    Toast.makeText(
-                        context,
-                        if (wasExcluded) R.string.recommendation_restored else R.string.dont_recommend_applied,
-                        Toast.LENGTH_SHORT
-                    ).show()
                 }
             )
         }

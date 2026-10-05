@@ -5,7 +5,6 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
-import com.darkxvenom.airbeats.LocalRingtoneViewModel
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -75,7 +74,6 @@ import com.darkxvenom.airbeats.utils.joinByBullet
 import com.darkxvenom.airbeats.utils.makeTimeString
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.time.LocalDateTime
 
 @SuppressLint("MutableCollectionMutableState")
@@ -91,7 +89,6 @@ fun YouTubeSongMenu(
     val database = LocalDatabase.current
     val playerConnection = LocalPlayerConnection.current ?: return
     val librarySong by database.song(song.id).collectAsState(initial = null)
-    val isExcluded by database.isRecommendationExcluded(song.id).collectAsState(initial = false)
     val download by LocalDownloadUtil.current.getDownload(song.id).collectAsState(initial = null)
     val coroutineScope = rememberCoroutineScope()
     val artists =
@@ -110,8 +107,6 @@ fun YouTubeSongMenu(
     var showSnippetStudioDialog by rememberSaveable {
         mutableStateOf(false)
     }
-
-    val ringtoneViewModel = LocalRingtoneViewModel.current
 
     val notAddedList by remember {
         mutableStateOf(mutableListOf<MediaMetadata>())
@@ -342,28 +337,6 @@ fun YouTubeSongMenu(
                 permissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
             }
         }
-        GridMenuItem(
-            icon = R.drawable.notification,
-            title = R.string.set_as_ringtone,
-        ) {
-            if (ringtoneViewModel.hasSettingsPermission(context)) {
-                ringtoneViewModel.showTrimmer(
-                    song.id,
-                    song.title,
-                    song.artists.joinToString { it.name },
-                    song.duration?.toLong() ?: 0L
-                )
-            } else {
-                ringtoneViewModel.requestSettingsPermission(context)
-            }
-            onDismiss()
-        }
-        GridMenuItem(
-            icon = R.drawable.content_cut,
-            title = R.string.ringtone_studio,
-        ) {
-            showSnippetStudioDialog = true
-        }
         if (artists.isNotEmpty()) {
             GridMenuItem(
                 icon = R.drawable.artist,
@@ -407,6 +380,12 @@ fun YouTubeSongMenu(
             }
         }
         GridMenuItem(
+            icon = R.drawable.save_to_storage,
+            title = R.string.ringtone_studio,
+        ) {
+            showSnippetStudioDialog = true
+        }
+        GridMenuItem(
             icon = R.drawable.share,
             title = R.string.share,
         ) {
@@ -418,37 +397,6 @@ fun YouTubeSongMenu(
                 }
             context.startActivity(Intent.createChooser(intent, null))
             onDismiss()
-        }
-        GridMenuItem(
-            icon = R.drawable.block,
-            title = if (isExcluded) R.string.allow_recommendations else R.string.dont_recommend_again,
-        ) {
-            val wasExcluded = isExcluded
-            coroutineScope.launch(Dispatchers.IO) {
-                if (wasExcluded) {
-                    database.removeRecommendationExclusion(song.id)
-                } else {
-                    database.insert(
-                        com.darkxvenom.airbeats.db.entities.RecommendationExclusionEntity(
-                            songId = song.id,
-                            title = song.title,
-                            artist = song.artists.joinToString { it.name },
-                            thumbnailUrl = song.thumbnail
-                        )
-                    )
-                    withContext(Dispatchers.Main) {
-                        playerConnection.removeSongFromQueue(song.id)
-                    }
-                }
-            }
-            if (!wasExcluded) {
-                onDismiss()
-            }
-            Toast.makeText(
-                context,
-                if (wasExcluded) R.string.recommendation_restored else R.string.dont_recommend_applied,
-                Toast.LENGTH_SHORT
-            ).show()
         }
     }
 
