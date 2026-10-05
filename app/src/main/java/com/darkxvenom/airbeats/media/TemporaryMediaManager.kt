@@ -13,4 +13,13 @@ class TemporaryMediaManager(private val context: Context) {
     fun cleanup(file: File?) {
         runCatching { file?.delete() }
     }
+
+    fun cleanupAll() {
+        runCatching {
+            val dir = File(context.cacheDir, "temp_media")
+            if (dir.exists() && dir.isDirectory) {
+                dir.listFiles()?.forEach { it.delete() }
+            }
+        }
+    }
 }

@@ -1,5 +1,7 @@
 package com.darkxvenom.airbeats.songs
 
+import com.darkxvenom.airbeats.recognition.RecognitionResult
+
 data class IdentifiedSong(
     val id: String = "",
     val title: String,
@@ -23,5 +25,17 @@ object SongMetadataNormalizer {
             .replace(Regex("(?i)\\(ft\\.?.*?\\)"), "")
             .replace(Regex("(?i)\\(feat\\.?.*?\\)"), "")
             .trim()
+    }
+
+    fun normalize(result: RecognitionResult): IdentifiedSong {
+        return IdentifiedSong(
+            title = normalize(result.title.orEmpty()),
+            artist = normalize(result.artist.orEmpty()),
+            album = result.album,
+            albumArtUrl = result.albumArtUrl,
+            durationMs = result.durationMs,
+            provider = result.provider,
+            rawMetadata = result.rawMetadata
+        )
     }
 }

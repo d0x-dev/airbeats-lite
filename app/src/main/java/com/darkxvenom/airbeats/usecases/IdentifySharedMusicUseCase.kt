@@ -36,6 +36,20 @@ enum class IdentificationStep {
     COMPLETE
 }
 
+sealed class IdentificationOutcome {
+    data class Success(
+        val song: IdentifiedSong,
+        val airBeatsMatch: com.darkxvenom.airbeats.providers.ProviderSong?,
+        val candidates: List<com.darkxvenom.airbeats.providers.ProviderSong>
+    ) : IdentificationOutcome()
+    data object NoMusicFound : IdentificationOutcome()
+    data object NoAudio : IdentificationOutcome()
+    data class UnsupportedMedia(val reason: String) : IdentificationOutcome()
+    data class IsUrlOnly(val url: String) : IdentificationOutcome()
+    data object NetworkError : IdentificationOutcome()
+    data class Error(val message: String) : IdentificationOutcome()
+}
+
 class IdentifySharedMusicUseCase(
     private val context: Context,
     private val tempManager: TemporaryMediaManager = TemporaryMediaManager(context),

@@ -37,4 +37,6 @@ class ProviderSearchManager(private val context: Context) {
             emptyList()
         }
     }
+
+    suspend fun searchProviders(identifiedSong: IdentifiedSong): List<ProviderSong> = searchMatchingSongs(identifiedSong)
 }

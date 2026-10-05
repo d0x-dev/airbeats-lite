@@ -95,28 +95,17 @@ object AudioTrimmerUtil {
 
             onProgress(10)
 
-            // 3. Check active playback stream URL from player service or database
+            // 3. Check active playback stream URL from database
             var resolvedStreamUrl: String? = null
             var resolvedExt = "m4a"
 
-            val activeSongUrl = playerConnection?.service?.getCachedPlaybackUrl(mediaMetadata.id)
-                ?: MusicService.instance?.getCachedPlaybackUrl(mediaMetadata.id)
-            if (!activeSongUrl.isNullOrBlank()) {
-                resolvedStreamUrl = activeSongUrl
-                if (activeSongUrl.contains("opus") || activeSongUrl.contains("webm")) {
+            val dbFormat = playerConnection?.service?.database?.format(mediaMetadata.id)?.firstOrNull()
+                ?: MusicService.instance?.database?.format(mediaMetadata.id)?.firstOrNull()
+            val dbUrl = dbFormat?.playbackUrl
+            if (!dbUrl.isNullOrBlank() && (dbUrl.startsWith("http://") || dbUrl.startsWith("https://"))) {
+                resolvedStreamUrl = dbUrl
+                if (dbFormat.mimeType.contains("opus") || dbFormat.mimeType.contains("webm")) {
                     resolvedExt = "opus"
-                }
-            }
-
-            if (resolvedStreamUrl == null) {
-                val dbFormat = playerConnection?.service?.database?.format(mediaMetadata.id)?.firstOrNull()
-                    ?: MusicService.instance?.database?.format(mediaMetadata.id)?.firstOrNull()
-                val dbUrl = dbFormat?.playbackUrl
-                if (!dbUrl.isNullOrBlank() && (dbUrl.startsWith("http://") || dbUrl.startsWith("https://"))) {
-                    resolvedStreamUrl = dbUrl
-                    if (dbFormat.mimeType.contains("opus") || dbFormat.mimeType.contains("webm")) {
-                        resolvedExt = "opus"
-                    }
                 }
             }
 
@@ -124,18 +113,14 @@ object AudioTrimmerUtil {
             val artistName = mediaMetadata.artists.firstOrNull()?.name.orEmpty()
             if (resolvedStreamUrl == null) {
                 val isJioSaavnTrack = mediaMetadata.id.startsWith("JS:")
-                val isYouTubeTrack = !isJioSaavnTrack && (mediaMetadata.id.length == 11 && !mediaMetadata.id.startsWith("sp:") && !mediaMetadata.id.startsWith("local:"))
 
                 suspend fun tryJioSaavn(): String? {
                     return if (isJioSaavnTrack) {
                         runCatching { JioSaavnApi.getStreamUrl(mediaMetadata.id) }.getOrNull()
                     } else {
                         runCatching {
-                            JioSaavnApi.findMatchAndStreamUrl(
-                                title = mediaMetadata.title,
-                                artist = artistName,
-                                durationSec = mediaMetadata.duration
-                            )
+                            val search = JioSaavnApi.searchSongs("${mediaMetadata.title} $artistName").getOrNull()
+                            search?.firstOrNull()?.let { JioSaavnApi.getStreamUrl(it.id) }
                         }.getOrNull()
                     }
                 }
